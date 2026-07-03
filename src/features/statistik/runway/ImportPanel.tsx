@@ -70,8 +70,8 @@ export function ImportPanel() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-[13px] leading-relaxed text-kanal-fg2">
-        Impor ekspor Realbyte (.xlsx). Seluruh data transaksi akan diganti
-        dengan isi file.
+        Impor file .xlsx — ekspor dari Realbyte “Pengelola Keuangan” atau hasil
+        Ekspor Kanal. Seluruh data transaksi akan diganti dengan isi file.
       </p>
       <div className="font-mono text-[11px] text-kanal-fg3">
         Saat ini {currentCount} transaksi tersimpan.

@@ -1,7 +1,7 @@
 // Pengaturan (Stage Final §4.5) — opened from the Beranda gear. Theme choice
-// (Gelap / Terang / Ikuti sistem) and a small iOS "add to home screen" helper.
-// Deliberately sparse: Kanal has no accounts, no sync, nothing to configure but
-// the surface it shows on.
+// (Gelap / Terang / Ikuti sistem), data in/out (ekspor .xlsx + impor — moved
+// here from its old hiding place inside Runway's Kelola sheet so migration
+// from Realbyte is discoverable), and a small iOS "add to home screen" helper.
 
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -9,6 +9,9 @@ import { CaretDown, Check, Export, Plus } from '@phosphor-icons/react'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useUiStore } from '../../app/uiStore'
 import { useThemeStore, type ThemeChoice } from '../../data/themeStore'
+import { useTxStore } from '../../data/txStore'
+import { ImportPanel } from '../statistik/runway/ImportPanel'
+import { exportTransactionsXlsx } from './exportXlsx'
 
 const THEME_OPTIONS: Array<{ key: ThemeChoice; label: string }> = [
   { key: 'dark', label: 'Gelap' },
@@ -21,7 +24,22 @@ export function PengaturanSheet() {
   const close = useUiStore((s) => s.closeSettings)
   const choice = useThemeStore((s) => s.choice)
   const setChoice = useThemeStore((s) => s.setChoice)
+  const transactions = useTxStore((s) => s.transactions)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [imporOpen, setImporOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  const doExport = async () => {
+    if (transactions.length === 0 || exporting) return
+    setExporting(true)
+    try {
+      await exportTransactionsXlsx(transactions)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <BottomSheet open={open} onClose={close} ariaLabel="Pengaturan" maxHeight="76%">
@@ -47,6 +65,58 @@ export function PengaturanSheet() {
             ))}
           </div>
         </div>
+
+        <div className="my-5 h-px bg-kanal-line" />
+
+        {/* data in/out */}
+        <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-kanal-fg3">
+          Data
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-4">
+          <span className="flex min-w-0 flex-col">
+            <span className="text-[15px] text-kanal-fg2">Ekspor transaksi</span>
+            <span className="tnum mt-0.5 font-mono text-[11px] text-kanal-fg3">
+              {transactions.length} transaksi · .xlsx
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={doExport}
+            disabled={transactions.length === 0 || exporting}
+            className="flex-none rounded-[9px] border border-kanal-line px-3 py-1.5 text-[13px] font-medium text-kanal-fg2 transition-transform active:scale-[0.97] disabled:opacity-40"
+          >
+            {exporting ? 'Menyiapkan…' : 'Ekspor'}
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setImporOpen((v) => !v)}
+          aria-expanded={imporOpen}
+          className="mt-4 flex w-full items-center justify-between py-1 text-left"
+        >
+          <span className="text-[15px] text-kanal-fg2">Impor dari file</span>
+          <CaretDown
+            size={16}
+            className={`text-kanal-fg3 transition-transform ${imporOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+        <AnimatePresence initial={false}>
+          {imporOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="pt-3">
+                <ImportPanel />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="my-5 h-px bg-kanal-line" />
 
