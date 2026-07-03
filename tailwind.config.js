@@ -23,7 +23,14 @@ export default {
           exp: 'var(--exp)',
           'exp-tint': 'var(--exp-tint)',
           'exp-bd': 'var(--exp-bd)',
+          handle: 'var(--handle)',
+          skeleton: 'var(--skeleton)',
+          weekend: 'var(--tint-weekend)',
+          glass: 'var(--glass)',
         },
+      },
+      boxShadow: {
+        elev: 'var(--elev-shadow)',
       },
       fontFamily: {
         sans: ['Geist', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],

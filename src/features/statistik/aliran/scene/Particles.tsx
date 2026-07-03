@@ -8,14 +8,14 @@
 // depthTest is OFF so particles read from ANY camera angle (never occluded by
 // the water/banks). Positions/sizes update in place; no per-frame allocation.
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import vertexShader from '../shaders/particle.vert?raw'
 import fragmentShader from '../shaders/particle.frag?raw'
-import { COLORS, PARTICLES, particleSize } from '../config/sceneConstants'
-import { destinationPoint, sourcePoint } from '../config/scenePositions'
-import { MOCK_TRANSACTIONS } from '../data/mockTransactions'
+import { PARTICLES, particleSize } from '../config/sceneConstants'
+import { useScenePalette } from '../config/scenePalette'
+import { useSceneData, type AliranScene } from '../hooks/useSceneData'
 import { useSceneStore } from '../hooks/useSceneStore'
 
 interface Flow {
@@ -51,25 +51,29 @@ function cubicBezier(
   )
 }
 
-function buildFlows(): Flow[] {
+// Sample at most this many transactions of each kind so a 1800-row real dataset
+// doesn't spawn thousands of particles — keep the stream calm (§5.9 hardCap).
+const MAX_FLOWS = 64
+
+function buildFlows(scene: AliranScene): Flow[] {
   const sizeSpan = PARTICLES.sizeMax - PARTICLES.sizeMin
   const flows: Flow[] = []
 
-  for (const t of MOCK_TRANSACTIONS) {
+  // Largest transactions first, so the visible stream favours meaningful moves.
+  const txns = [...scene.transactions]
+    .filter((t) => t.type === 'masuk' || (t.type === 'keluar' && t.category))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, MAX_FLOWS)
+
+  for (const t of txns) {
     const sz = Math.min(
       PARTICLES.sizeMax,
       Math.max(PARTICLES.sizeMin, particleSize(t.amount)),
     )
     const baseSize = 0.9 + ((sz - PARTICLES.sizeMin) / sizeSpan) * 1.0
 
-    // Parabola from the TOP of the source bar, arcing over the open middle of
-    // the river, down to the TOP of the destination bar. The arc peaks just
-    // above the taller bar (moderate, so it stays in frame) and the mid-flight
-    // travels over open water — never through the bar bodies. Endpoints fade in
-    // / out so a particle never sits glued to a bar tip. depthTest is off, so it
-    // reads over the bars from any camera angle.
     if (t.type === 'masuk') {
-      const acc = sourcePoint(t.account)
+      const acc = scene.sourceByKey.get(t.account)
       if (!acc) continue
       const peak = acc.y + 0.9
       flows.push({
@@ -81,11 +85,11 @@ function buildFlows(): Flow[] {
         p3: new THREE.Vector3(acc.x, acc.y, acc.z),
       })
     } else if (t.category) {
-      const acc = sourcePoint(t.account)
-      const cat = destinationPoint(t.category)
+      const acc = scene.sourceByKey.get(t.account)
+      const cat = scene.destByKey.get(t.category)
       if (!acc || !cat) continue
       const dx = cat.x - acc.x
-      const peak = Math.max(acc.y, cat.y) + 1.2
+      const peak = Math.max(acc.y, cat.y) + 1.7
       flows.push({
         income: false,
         baseSize,
@@ -102,10 +106,12 @@ function buildFlows(): Flow[] {
 export function Particles() {
   const pointsRef = useRef<THREE.Points>(null)
   const tmp = useRef(new THREE.Vector3())
+  const scene = useSceneData()
+  const palette = useScenePalette()
 
   const { flows, geometry, count, phases, durations, flowIndex } =
     useMemo(() => {
-      const flows = buildFlows()
+      const flows = buildFlows(scene)
       const count = flows.length * COPIES
       const positions = new Float32Array(count * 3)
       const colors = new Float32Array(count * 3)
@@ -114,8 +120,8 @@ export function Particles() {
       const durations = new Float32Array(count)
       const flowIndex = new Int32Array(count)
 
-      const income = new THREE.Color(COLORS.accent)
-      const expense = new THREE.Color(COLORS.expense)
+      const income = new THREE.Color(palette.particleIncome)
+      const expense = new THREE.Color(palette.particleExpense)
 
       for (let i = 0; i < count; i++) {
         const fi = i % flows.length
@@ -136,7 +142,10 @@ export function Particles() {
       geometry.setAttribute('aColor', new THREE.BufferAttribute(colors, 3))
       geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1))
       return { flows, geometry, count, phases, durations, flowIndex }
-    }, [])
+    }, [scene, palette])
+
+  // Dispose the previous GPU buffer when the period (scene) changes.
+  useEffect(() => () => geometry.dispose(), [geometry])
 
   useFrame((_, delta) => {
     const g = pointsRef.current?.geometry
@@ -173,14 +182,21 @@ export function Particles() {
   })
 
   return (
-    <points ref={pointsRef} geometry={geometry} frustumCulled={false}>
+    // renderOrder so particles draw AFTER the transparent water (which writes
+    // depth) — otherwise the water plane paints over them ("cut off by water").
+    // depthTest true so the prisms/ridges correctly occlude particles behind
+    // them (no more particles floating on the bars from rotated angles).
+    <points ref={pointsRef} geometry={geometry} frustumCulled={false} renderOrder={10}>
+      {/* Additive glow on dark; normal blending on light (additive washes out
+          to white on a bright field). Colour/blending change only. */}
       <shaderMaterial
+        key={palette.key}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
         transparent
         depthWrite={false}
-        depthTest={false}
-        blending={THREE.AdditiveBlending}
+        depthTest={true}
+        blending={palette.additiveParticles ? THREE.AdditiveBlending : THREE.NormalBlending}
       />
     </points>
   )

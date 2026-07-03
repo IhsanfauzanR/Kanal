@@ -20,10 +20,12 @@ import { Particles } from './scene/Particles'
 import { PostFx } from './scene/PostFx'
 import { PerfMonitor } from './scene/PerfMonitor'
 import { CAMERA, QUALITY } from './config/sceneConstants'
+import { useScenePalette } from './config/scenePalette'
 import { useSceneStore } from './hooks/useSceneStore'
 
 export function AliranCanvas() {
   const qualityTier = useSceneStore((s) => s.qualityTier)
+  const palette = useScenePalette()
   const dpr = qualityTier === 'high' ? QUALITY.high.dpr : 1
 
   return (
@@ -54,7 +56,9 @@ export function AliranCanvas() {
         </SceneFit>
       </Suspense>
       <PerfMonitor />
-      {qualityTier === 'high' && <PostFx />}
+      {/* Bloom only on the dark field — on a light background the bright
+          surface itself would bloom and wash the whole frame. */}
+      {qualityTier === 'high' && palette.additiveParticles && <PostFx />}
     </Canvas>
   )
 }

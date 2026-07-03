@@ -12,6 +12,21 @@ dist
 dist-ssr
 *.local
 
+# Deploy
+.vercel/
+
+# Dev-only decision log (not for the public repo)
+EXECUTION_LOG.md
+
+# Personal financial data — never committed. The app is local-first and ships
+# empty; real data only ever lives in the user's own browser (IndexedDB) or, if
+# regenerated locally as a dev convenience, in these files. See data/db.ts /
+# data/txStore.ts — nothing in the app imports these anymore.
+*.xlsx
+*.xls
+src/data/realbyteData.ts
+src/data/realData.ts
+
 # Claude Code local config
 .claude/
 

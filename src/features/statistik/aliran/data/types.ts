@@ -23,13 +23,16 @@ export type CategoryId =
 
 export type TxType = 'masuk' | 'keluar' | 'pindah'
 
+// account/category are free strings: real imported data (Realbyte) carries
+// accounts and categories beyond the fixed Aliran sets below. AccountId /
+// CategoryId remain the known subset the Aliran 3D scene is built around.
 export interface Transaction {
   id: string
   type: TxType
   amount: number // IDR, always positive integer
-  category?: CategoryId // required for masuk/keluar
-  account: AccountId // source account (or "from" for pindah)
-  toAccount?: AccountId // for pindah only
+  category?: string // required for masuk/keluar
+  account: string // source account (or "from" for pindah)
+  toAccount?: string // for pindah only
   label: string // "Warung Tegal", "Gaji", "Alfamart"
   note?: string
   timestamp: Date
@@ -77,4 +80,14 @@ export const CATEGORY_LABELS: Record<CategoryId, string> = {
   'kebutuhan-mingguan': 'kebutuhan mingguan',
   'kebutuhan-bulanan': 'kebutuhan bulanan',
   kecantikan: 'kecantikan',
+}
+
+// Look up a display label, falling back to the raw value for accounts/categories
+// outside the known Aliran sets (real imported data is already human-readable).
+export function accountLabel(id: string): string {
+  return (ACCOUNT_LABELS as Record<string, string>)[id] ?? id
+}
+
+export function categoryLabel(id: string): string {
+  return (CATEGORY_LABELS as Record<string, string>)[id] ?? id
 }

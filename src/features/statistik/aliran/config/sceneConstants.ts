@@ -171,8 +171,8 @@ export const QUALITY = {
 // not @react-three/postprocessing (its peer wants three ≥0.168). DOF skipped
 // (§5.10: optional, drop if perf-risky).
 export const BLOOM = {
-  strength: 0.55,
-  radius: 0.6, // wider, softer halo for a smooth diffuse glow
+  strength: 0.32, // gentle — keeps particle colour instead of blowing to white
+  radius: 0.35, // tighter halo so cores stay crisp (not a blurry smear)
   threshold: 0.5, // only the bright additive particle cores bloom, not the water
 } as const
 

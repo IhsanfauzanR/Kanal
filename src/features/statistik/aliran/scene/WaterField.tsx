@@ -9,26 +9,30 @@ import * as THREE from 'three'
 import vertexShader from '../shaders/water.vert?raw'
 import fragmentShader from '../shaders/water.frag?raw'
 import { FOG, KEY_LIGHT_DIR, WATER } from '../config/sceneConstants'
+import { useScenePalette } from '../config/scenePalette'
 import { useSceneStore } from '../hooks/useSceneStore'
 
 export function WaterField() {
   const matRef = useRef<THREE.ShaderMaterial>(null)
+  const palette = useScenePalette()
 
+  // Colours follow the theme; wave shape/speed/edge stay locked. The material
+  // is keyed by theme (below) so the uniforms object is rebuilt on switch.
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
       uAmp: { value: WATER.amplitude },
-      uColorDeep: { value: new THREE.Color(WATER.colorDeep) },
-      uColorCrest: { value: new THREE.Color(WATER.colorCrest) },
-      uSpec: { value: new THREE.Color(WATER.spec) },
+      uColorDeep: { value: new THREE.Color(palette.waterDeep) },
+      uColorCrest: { value: new THREE.Color(palette.waterCrest) },
+      uSpec: { value: new THREE.Color(palette.waterSpec) },
       uLightDir: { value: new THREE.Vector3(...KEY_LIGHT_DIR).normalize() },
-      uFogColor: { value: new THREE.Color(FOG.color) },
+      uFogColor: { value: new THREE.Color(palette.fog) },
       uFogNear: { value: FOG.near },
       uFogFar: { value: FOG.far },
       uHalfSize: { value: WATER.size / 2 },
       uEdgeStart: { value: WATER.edgeStartFraction },
     }),
-    [],
+    [palette],
   )
 
   useFrame((_, delta) => {
@@ -49,6 +53,7 @@ export function WaterField() {
         args={[WATER.size, WATER.size, WATER.segments, WATER.segments]}
       />
       <shaderMaterial
+        key={palette.key}
         ref={matRef}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}

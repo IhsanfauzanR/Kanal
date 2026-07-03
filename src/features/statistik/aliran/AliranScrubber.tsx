@@ -1,12 +1,16 @@
 // Time scrubber + playback controls — DOM, not 3D (§9).
-// Day 1: draggable track wired to the store (live fill + pill), play/pause and
-// speed toggles set state. The auto-advance playback loop and particle
-// response arrive in Day 5 (PlaybackController).
+// Draggable track wired to the store (live fill + pill), play/pause and speed
+// toggles. Stage Final: the pill + endpoints follow the ACTIVE period and real
+// data (they were hardcoded to the Stage 3B mock span before), so scrubbing
+// July shows July dates and the true cumulative spend.
 
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { Play, Pause } from '@phosphor-icons/react'
 import { useSceneStore, type PlaybackSpeed } from './hooks/useSceneStore'
-import { scrubberPill } from './format'
+import { useSceneData } from './hooks/useSceneData'
+import { useStatistikStore } from '../shared/store/useStatistikStore'
+import { shortDate } from '../shared/format'
+import { dots } from './format'
 
 const SPEEDS: PlaybackSpeed[] = [1, 2, 4]
 
@@ -21,6 +25,29 @@ export function AliranScrubber({ className = '' }: { className?: string }) {
   const togglePlay = useSceneStore((s) => s.togglePlay)
   const setPlaying = useSceneStore((s) => s.setPlaying)
   const setSpeed = useSceneStore((s) => s.setSpeed)
+
+  const period = useStatistikStore((s) => s.period)
+  const { transactions } = useSceneData()
+
+  // Expenses sorted by time, for the running cumulative in the pill.
+  const expenses = useMemo(
+    () =>
+      transactions
+        .filter((t) => t.type === 'keluar')
+        .map((t) => ({ ms: t.timestamp.getTime(), amount: t.amount }))
+        .sort((a, b) => a.ms - b.ms),
+    [transactions],
+  )
+
+  const startMs = period.start.getTime()
+  const endMs = period.end.getTime()
+  const atMs = startMs + progress * (endMs - startMs)
+  let cumulative = 0
+  for (const e of expenses) {
+    if (e.ms > atMs) break
+    cumulative += e.amount
+  }
+  const pill = `${shortDate(new Date(atMs))} · Rp ${dots(cumulative)}`
 
   const pct = `${(progress * 100).toFixed(2)}%`
 
@@ -44,8 +71,7 @@ export function AliranScrubber({ className = '' }: { className?: string }) {
     dragging.current = false
   }
 
-  const glass =
-    'backdrop-blur-md bg-[rgba(9,9,11,0.7)] border border-white/[0.06]'
+  const glass = 'backdrop-blur-md bg-kanal-glass border border-kanal-line'
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
@@ -64,10 +90,10 @@ export function AliranScrubber({ className = '' }: { className?: string }) {
 
       <div className="relative flex-1 pt-3.5">
         <div
-          className="tnum absolute -top-3 -translate-x-1/2 whitespace-nowrap rounded-md border border-kanal-line bg-kanal-surf px-2 py-[3px] font-mono text-[9px] text-zinc-200"
+          className="tnum absolute -top-3 -translate-x-1/2 whitespace-nowrap rounded-md border border-kanal-line bg-kanal-surf px-2 py-[3px] font-mono text-[9px] text-kanal-fg"
           style={{ left: pct }}
         >
-          {scrubberPill(progress)}
+          {pill}
         </div>
 
         <div
@@ -77,7 +103,7 @@ export function AliranScrubber({ className = '' }: { className?: string }) {
           onPointerUp={onPointerUp}
           className="relative flex h-4 cursor-pointer items-center"
         >
-          <div className="absolute left-0 right-0 h-1 rounded-full bg-[rgba(39,39,42,0.5)]" />
+          <div className="absolute left-0 right-0 h-1 rounded-full bg-[color:var(--line)]" />
           <div
             className="absolute left-0 h-1 rounded-full"
             style={{
@@ -92,8 +118,8 @@ export function AliranScrubber({ className = '' }: { className?: string }) {
         </div>
 
         <div className="mt-[3px] flex justify-between font-mono text-[9px] text-kanal-fg3">
-          <span>25 Mei</span>
-          <span>26 Jun</span>
+          <span>{shortDate(period.start)}</span>
+          <span>{shortDate(period.end)}</span>
         </div>
       </div>
 

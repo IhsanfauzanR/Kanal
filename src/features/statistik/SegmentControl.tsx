@@ -1,31 +1,37 @@
-// Statistik segment control (Stage 3B). Only "Aliran" is implemented this
-// stage; the rest are marked "Segera" and surface a brief tooltip on tap
-// without leaving Aliran (§12: other views are out of scope for 3C).
+// Statistik segment control. Stage Final: all six segments are active — Aliran,
+// Pemasukan vs Pengeluaran, Runway, Kalender, Suasana, Tinjauan.
 
 import { useRef, useState } from 'react'
+import {
+  useStatistikStore,
+  type StatistikView,
+} from './shared/store/useStatistikStore'
 
 interface Segment {
-  key: string
+  key: StatistikView
   label: string
   soon: boolean
 }
 
 const SEGMENTS: Segment[] = [
   { key: 'aliran', label: 'Aliran', soon: false },
-  { key: 'ivp', label: 'Pemasukan vs Pengeluaran', soon: true },
-  { key: 'runway', label: 'Runway', soon: true },
-  { key: 'kalender', label: 'Kalender', soon: true },
-  { key: 'suasana', label: 'Suasana', soon: true },
-  { key: 'tinjauan', label: 'Tinjauan', soon: true },
+  { key: 'pemasukan-vs-pengeluaran', label: 'Pemasukan vs Pengeluaran', soon: false },
+  { key: 'runway', label: 'Runway', soon: false },
+  { key: 'kalender', label: 'Kalender', soon: false },
+  { key: 'suasana', label: 'Suasana', soon: false },
+  { key: 'tinjauan', label: 'Tinjauan', soon: false },
 ]
 
 export function SegmentControl() {
+  const currentView = useStatistikStore((s) => s.currentView)
+  const setView = useStatistikStore((s) => s.setView)
   const [tip, setTip] = useState<string | null>(null)
   const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const onPick = (seg: Segment) => {
     if (!seg.soon) {
       setTip(null)
+      setView(seg.key)
       return
     }
     setTip(seg.label)
@@ -37,13 +43,14 @@ export function SegmentControl() {
     <div className="relative mt-3.5">
       <div className="no-scrollbar flex overflow-x-auto border-b border-kanal-line px-[22px]">
         {SEGMENTS.map((seg) => {
-          const active = seg.key === 'aliran'
+          const active = seg.key === currentView
           return (
             <button
               key={seg.key}
               type="button"
               onClick={() => onPick(seg)}
-              className={`-mb-px flex-none whitespace-nowrap border-b-2 px-3.5 pb-[11px] pt-3 text-[13px] font-medium transition-colors ${
+              aria-pressed={active}
+              className={`-mb-px flex-none whitespace-nowrap border-b-2 px-3.5 pb-[11px] pt-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:text-kanal-fg ${
                 active
                   ? 'border-kanal-teal text-kanal-teal'
                   : 'border-transparent text-kanal-fg3'
@@ -61,8 +68,11 @@ export function SegmentControl() {
       </div>
 
       {tip && (
-        <div className="absolute left-[22px] top-[46px] z-10 rounded-lg border border-kanal-line bg-kanal-surf2 px-[11px] py-1.5 text-xs text-kanal-fg2">
-          {tip} · hadir di tahap berikutnya
+        <div
+          role="status"
+          className="absolute left-[22px] top-[46px] z-10 rounded-lg border border-kanal-line bg-kanal-surf2 px-[11px] py-1.5 text-xs text-kanal-fg2"
+        >
+          {tip} · akan datang setelah v1.0
         </div>
       )}
     </div>

@@ -5,7 +5,9 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { ArrowRight, X } from '@phosphor-icons/react'
+import { useSheetHistory } from '../../../components/useSheetHistory'
 import { useSceneStore } from './hooks/useSceneStore'
+import { useSceneData } from './hooks/useSceneData'
 import { useCameraDolly } from './hooks/useCameraDolly'
 import { buildPanelData, type AmountTone, type PanelData } from './panelData'
 
@@ -23,13 +25,17 @@ export function AliranInfoPanel() {
     requestReset()
   }, [clearSelection, requestReset])
 
-  const live = buildPanelData(selected)
+  const scene = useSceneData()
+  const live = buildPanelData(selected, scene)
   const open = !!live
 
   // Retain the last content so the slide-down animates with data still present.
   const lastRef = useRef<PanelData | null>(null)
   if (live) lastRef.current = live
   const data = live ?? lastRef.current
+
+  // Android back gesture/button closes the panel instead of exiting the app.
+  useSheetHistory(open, close)
 
   // Close on Escape.
   useEffect(() => {
@@ -56,7 +62,7 @@ export function AliranInfoPanel() {
         {data && (
           <>
             <div className="flex flex-none items-center justify-between px-[22px] pt-2.5">
-              <span className="h-1 w-7 rounded-full bg-zinc-700" />
+              <span className="h-1 w-7 rounded-full bg-kanal-handle" />
               <button
                 type="button"
                 onClick={close}
@@ -114,7 +120,7 @@ export function AliranInfoPanel() {
                       key={i}
                       className="flex items-center gap-3 border-t border-kanal-line py-3"
                     >
-                      <div className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full bg-kanal-surf font-mono text-[13px] text-zinc-300">
+                      <div className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full bg-kanal-surf font-mono text-[13px] text-kanal-fg">
                         {r.initial}
                       </div>
                       <div className="min-w-0 flex-1">

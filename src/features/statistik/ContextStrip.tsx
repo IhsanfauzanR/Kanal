@@ -1,21 +1,33 @@
-// Period summary strip (Stage 3B): income · expense · net difference.
-// Factual copy only (3A rule 7 — no metaphor). Net is teal when positive.
+// Period summary strip (Stage 3B), from the real period data: income · expense
+// · net. Computes totals straight from useTransactions — deliberately does NOT
+// import the Aliran scene hook, which would pull three.js into the main bundle.
 
-import {
-  CANONICAL_TOTAL_EXPENSE,
-  CANONICAL_TOTAL_INCOME,
-} from './aliran/data/mockTransactions'
-import { dots } from './aliran/format'
+import { useMemo } from 'react'
+import { useTransactions } from '../../data/useTransactions'
+import { useStatistikStore } from './shared/store/useStatistikStore'
+import { dots } from './shared/format'
 
 export function ContextStrip() {
-  const net = CANONICAL_TOTAL_INCOME - CANONICAL_TOTAL_EXPENSE
+  const period = useStatistikStore((s) => s.period)
+  const { transactions } = useTransactions(period)
+
+  const { income, expense } = useMemo(() => {
+    let income = 0
+    let expense = 0
+    for (const t of transactions) {
+      if (t.type === 'masuk') income += t.amount
+      else if (t.type === 'keluar') expense += t.amount
+    }
+    return { income, expense }
+  }, [transactions])
+
+  const net = income - expense
   const netSign = net >= 0 ? '+' : '−'
 
   return (
     <div className="tnum mt-3 px-[22px] font-mono text-[11px] text-kanal-fg3">
-      Pemasukan Rp {dots(CANONICAL_TOTAL_INCOME)} · Pengeluaran Rp{' '}
-      {dots(CANONICAL_TOTAL_EXPENSE)} · Selisih{' '}
-      <span className="text-kanal-teal">
+      Pemasukan Rp {dots(income)} · Pengeluaran Rp {dots(expense)} · Selisih{' '}
+      <span className={net >= 0 ? 'text-kanal-teal' : 'text-kanal-exp'}>
         {netSign}Rp {dots(net)}
       </span>
     </div>

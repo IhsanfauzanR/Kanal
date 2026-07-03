@@ -14,8 +14,10 @@ import { SankeyFallback } from './SankeyFallback'
 import { AliranScrubber } from './AliranScrubber'
 import { AliranInfoPanel } from './AliranInfoPanel'
 import { useSceneStore } from './hooks/useSceneStore'
+import { useSceneData } from './hooks/useSceneData'
 import { useCameraDolly } from './hooks/useCameraDolly'
 import { usePlayback } from './hooks/usePlayback'
+import { useStatistikStore } from '../shared/store/useStatistikStore'
 
 interface IconButtonProps {
   icon: Icon
@@ -31,8 +33,8 @@ function IconButton({ icon: Icon, label, onClick, active }: IconButtonProps) {
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-white/[0.06] bg-[rgba(9,9,11,0.6)] backdrop-blur-md transition-transform active:scale-[0.94] ${
-        active ? 'text-zinc-200' : 'text-kanal-fg2'
+      className={`flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-kanal-line bg-kanal-glass backdrop-blur-md transition-transform active:scale-[0.94] ${
+        active ? 'text-kanal-fg' : 'text-kanal-fg2'
       }`}
     >
       <Icon size={18} weight="regular" />
@@ -45,6 +47,8 @@ export function AliranView() {
   const toggle2DFallback = useSceneStore((s) => s.toggle2DFallback)
   const set2DFallback = useSceneStore((s) => s.set2DFallback)
   const requestReset = useCameraDolly((s) => s.requestReset)
+  const { txCount } = useSceneData()
+  const periodLabel = useStatistikStore((s) => s.period.label)
 
   usePlayback()
 
@@ -60,7 +64,7 @@ export function AliranView() {
       className="relative flex-1 overflow-hidden rounded-2xl border border-kanal-line"
       style={{
         background:
-          'linear-gradient(180deg,#101013 0%,#09090b 28%,#09090b 72%,#101013 100%)',
+          'linear-gradient(180deg,var(--scene-edge) 0%,var(--scene-mid) 28%,var(--scene-mid) 72%,var(--scene-edge) 100%)',
       }}
       role="group"
       aria-label="Aliran — visualisasi arus kas: pemasukan mengalir ke pengeluaran"
@@ -75,15 +79,12 @@ export function AliranView() {
       )}
 
       {/* MENAMPILKAN context chip */}
-      <div
-        className="absolute left-3 top-3 rounded-[11px] border border-white/[0.06] bg-[rgba(9,9,11,0.6)] px-3 py-[9px] backdrop-blur-md"
-        style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
-      >
+      <div className="rounded-[11px] absolute left-3 top-3 border border-kanal-line bg-kanal-glass px-3 py-[9px] backdrop-blur-md">
         <div className="font-mono text-[9px] tracking-[0.14em] text-kanal-fg3">
           MENAMPILKAN
         </div>
         <div className="mt-1 text-[13px] font-medium text-kanal-fg">
-          26 transaksi · 25 Mei – 26 Jun
+          {txCount} transaksi · {periodLabel}
         </div>
       </div>
 

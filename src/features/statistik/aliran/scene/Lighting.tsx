@@ -1,8 +1,12 @@
 // Cold, singular lighting — §5.4. No shadows, no point lights, no warm rim.
+// Stage Final: hemisphere colours follow the theme (colours only — intensities
+// and positions stay locked). Keyed because hemisphere colours are args.
 
 import { LIGHTING } from '../config/sceneConstants'
+import { useScenePalette } from '../config/scenePalette'
 
 export function Lighting() {
+  const palette = useScenePalette()
   return (
     <>
       <ambientLight
@@ -15,11 +19,8 @@ export function Lighting() {
         color={LIGHTING.key.color}
       />
       <hemisphereLight
-        args={[
-          LIGHTING.hemisphere.sky,
-          LIGHTING.hemisphere.ground,
-          LIGHTING.hemisphere.intensity,
-        ]}
+        key={palette.key}
+        args={[palette.hemisphereSky, palette.hemisphereGround, LIGHTING.hemisphere.intensity]}
       />
     </>
   )

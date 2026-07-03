@@ -5,14 +5,14 @@
 // non-reactive per-frame reads.
 
 import { create } from 'zustand'
-import type { AccountId, CategoryId } from '../data/types'
 
 export type QualityTier = 'high' | 'medium' | 'low'
 export type PlaybackSpeed = 1 | 2 | 4
 
+// account/category keys are free strings (real catalog data, not the fixed set).
 export type SelectedElement =
-  | { type: 'source'; accountId: AccountId }
-  | { type: 'destination'; categoryId: CategoryId }
+  | { type: 'source'; accountId: string }
+  | { type: 'destination'; categoryId: string }
   | { type: 'particle'; transactionId: string }
   | null
 

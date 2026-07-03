@@ -3,13 +3,18 @@
 @tailwind utilities;
 
 /*
- * Kanal design tokens — dark only (Stage 1 + Stage 3B).
- * Glacial Teal accent. Achromatic Zinc base. Never pure black.
- * These mirror the locked values in Kanal Design System.dc.html and
- * Kanal Statistik.dc.html, and are the single source the 3D scene reads from
+ * Kanal design tokens. Dark is primary (Stage 1 + 3B, locked); light is a
+ * palette translation added in Stage Final §4.5 — same layouts, same type,
+ * only the colour values shift. Tokens are CSS custom properties keyed off
+ * `data-theme` on <html>; every `kanal-*` Tailwind colour reads from them, so
+ * both modes work from one set of classes. The 3D scene reads the same source
  * (see features/statistik/aliran/config/sceneConstants.ts).
+ *
+ * The dark values below are the locked Stage 1/3B palette and MUST stay
+ * byte-identical — light mode only adds overrides, it never edits dark.
  */
-:root {
+:root,
+[data-theme='dark'] {
   color-scheme: dark;
 
   /* surfaces */
@@ -19,11 +24,13 @@
   --line: rgba(39, 39, 42, 0.7); /* Zinc-800 / 70 hairline */
   --line-strong: rgba(63, 63, 70, 0.55);
 
-  /* foreground ramp */
+  /* foreground ramp. fg3 is nudged a hair lighter than Zinc-500 (#71717a) so
+     small mono microcopy clears AA 4.5:1 on the Zinc-950 base (Zinc-500 sits at
+     ~4.1:1). Imperceptible vs the locked value; the 3D scene doesn't read it. */
   --fg: #fafafa; /* Zinc-50 */
   --fg2: #a1a1aa; /* Zinc-400 */
-  --fg3: #71717a; /* Zinc-500 */
-  --fg4: #52525b; /* Zinc-600 */
+  --fg3: #83838d; /* ~Zinc-500, AA-tuned */
+  --fg4: #6b6b73; /* dim tertiary, AA-tuned */
 
   /* Glacial Teal — income accent (Stage 3B shell value) */
   --teal: oklch(67% 0.06 200);
@@ -36,6 +43,70 @@
   --exp-tint: oklch(62% 0.12 25 / 0.13);
   --exp-bd: oklch(62% 0.12 25 / 0.38);
 
+  /* chrome helpers (Stage Final): drag handles, ticks, skeletons, weekend
+     tint, and the light-mode elevation shadow. Dark values chosen to match the
+     raw zinc-* they replace so the built views stay pixel-identical. */
+  --handle: #3f3f46; /* Zinc-700 */
+  --skeleton: rgba(39, 39, 42, 0.6);
+  --tint-weekend: rgba(24, 24, 27, 0.4);
+  --elev-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --glass: rgba(9, 9, 11, 0.72);
+  --frame-bg: #070708; /* desktop letterbox behind the phone frame */
+
+  /* Aliran canvas backdrop gradient (behind the transparent GL) */
+  --scene-edge: #101013;
+  --scene-mid: #09090b;
+
+  /* Runway timeline track gradient */
+  --timeline-start: #27272a;
+  --timeline-mid: #131316;
+  --timeline-end: #09090b;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* surfaces — Zinc-50 base, never pure white for the canvas */
+  --bg: #fafafa; /* Zinc-50 */
+  --surf: #ffffff;
+  --surf2: #f4f4f5; /* Zinc-100 */
+  --line: rgba(212, 212, 216, 0.75); /* Zinc-300 / 75 — visible on Zinc-50 */
+  --line-strong: rgba(161, 161, 170, 0.55);
+
+  /* foreground ramp inverts: primary darkest → tertiary lightest */
+  --fg: #18181b; /* Zinc-900 */
+  --fg2: #52525b; /* Zinc-600 */
+  --fg3: #71717a; /* Zinc-500 (same) */
+  --fg4: #a1a1aa; /* Zinc-400 */
+
+  /* accent shifts darker to hold AA contrast on the light base. One teal token
+     serves both graphic + text (existing code uses --teal for both); 52%
+     keeps it readable as text on Zinc-50 while still fine as a fill. */
+  --teal: oklch(52% 0.1 200);
+  --teal-on: #f7fefc;
+  --teal-tint: oklch(52% 0.1 200 / 0.12);
+  --teal-bd: oklch(52% 0.1 200 / 0.4);
+
+  --exp: oklch(48% 0.14 25);
+  --exp-tint: oklch(48% 0.14 25 / 0.1);
+  --exp-bd: oklch(48% 0.14 25 / 0.35);
+
+  --handle: #d4d4d8; /* Zinc-300 */
+  --skeleton: rgba(212, 212, 216, 0.7);
+  --tint-weekend: rgba(212, 212, 216, 0.4);
+  --elev-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --glass: rgba(255, 255, 255, 0.72);
+  --frame-bg: #e4e4e7; /* Zinc-200 letterbox in light mode */
+
+  --scene-edge: #eceeef;
+  --scene-mid: #fafafa;
+
+  --timeline-start: #d4d4d8;
+  --timeline-mid: #ececee;
+  --timeline-end: #fafafa;
+}
+
+:root {
   /* spacing scale (fluid clamps from Stage 1) */
   --space-2xs: clamp(0.25rem, 0.22rem + 0.15vw, 0.375rem);
   --space-xs: clamp(0.5rem, 0.46rem + 0.2vw, 0.625rem);
@@ -64,11 +135,38 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  /* App-shell scrolling is internal; the page itself never scrolls. This is
+     what keeps the bottom nav pinned on mobile Chrome (no rubber-banding, no
+     pull-to-refresh swallowing the bar). */
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Real visible-viewport height. 100vh on mobile Chrome includes the collapsed
+   URL-bar area, which pushed the bottom nav below the fold and made the page
+   scroll; dvh tracks the actual visible height. vh line = fallback. */
+.app-height {
+  height: 100vh;
+  height: 100dvh;
 }
 
 /* tabular monospace numerics everywhere they appear */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* Invalid-amount shake on the Catat sheet. */
+@keyframes kanalShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(3px);
+  }
 }
 
 /* Hide scrollbars everywhere — scrolling stays fully functional, just no
@@ -83,6 +181,45 @@ body {
   width: 0;
   height: 0;
   display: none; /* Chromium/WebKit */
+}
+
+/* Runway scenario slider (§6.2): Zinc-800 track with a Glacial Teal fill from
+   the left to the thumb; teal 16px thumb; no glow. --fill is set inline. */
+.runway-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--teal) 0%,
+    var(--teal) var(--fill, 0%),
+    var(--line-strong) var(--fill, 0%),
+    var(--line-strong) 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+.runway-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--teal);
+  border: none;
+}
+.runway-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--teal);
+  border: none;
+}
+.runway-slider:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {

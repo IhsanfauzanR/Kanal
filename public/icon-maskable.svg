@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Kanal">
+  <rect width="512" height="512" fill="#09090b"/>
+  <!-- content kept within the central 80% safe zone for maskable cropping -->
+  <g transform="translate(256 256) scale(0.62) translate(-256 -256)">
+    <rect x="178" y="128" width="26" height="256" rx="13" fill="#fafafa"/>
+    <rect x="308" y="128" width="26" height="256" rx="13" fill="#fafafa"/>
+    <rect x="228" y="243" width="56" height="26" rx="13" fill="#77aeab"/>
+  </g>
+</svg>
