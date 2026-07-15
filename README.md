@@ -56,14 +56,25 @@ in both dark (primary) and light.
 
 Dark mode:
 
-![Aliran](docs/screenshots/aliran.png)
-![Kalender](docs/screenshots/kalender.png)
-![Suasana](docs/screenshots/suasana.png)
+<p align="center">
+  <img src="docs/screenshots/aliran.png" alt="Kanal — Beranda" width="360" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/kalender.png" alt="Kanal — Beranda" width="360" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/suasana.png" alt="Kanal — Beranda" width="360" />
+</p>
+
 
 Light mode:
 
-![Beranda light](docs/screenshots/beranda-light.png)
-![Aset](docs/screenshots/aset.png)
+<p align="center">
+  <img src="docs/screenshots/beranda-light.png" alt="Kanal — Beranda" width="360" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/aset.png" alt="Kanal — Beranda" width="360" />
+</p>
 
 ## Local development
 
