@@ -3,7 +3,9 @@
 **Pencatat keuangan pribadi yang tenang.** A quiet, anti-gamified personal
 finance tracker built as a personal daily-use tool and portfolio piece.
 
-![Kanal — Beranda](docs/screenshots/beranda-dark.png)
+<p align="center">
+  <img src="docs/screenshots/beranda-dark.png" alt="Kanal — Beranda" width="360" />
+</p>
 
 ## Design philosophy
 
