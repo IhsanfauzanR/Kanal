@@ -18,6 +18,36 @@ import type { RawTx } from './db'
 const uid = (p: string) =>
   `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 
+// Pure: computes the accounts to add for names seen in imported rows but
+// missing from the catalog. Anchored at epoch (not "now") — imported
+// transactions are historical, and useLiveAccounts only counts deltas after
+// an account's anchor. Anchoring at "now" made every imported transaction
+// predate the anchor, so the derived balance never moved off the starting 0.
+export function computeNewAccountsFromImport(
+  existingAccounts: Account[],
+  rows: RawTx[],
+): Account[] {
+  const haveAcc = new Set(existingAccounts.map((a) => a.name))
+  const newAccounts: Account[] = []
+  for (const r of rows) {
+    for (const name of [r.account, r.toAccount]) {
+      if (name && !haveAcc.has(name)) {
+        haveAcc.add(name)
+        newAccounts.push({
+          id: uid('acc'),
+          name,
+          group: 'ewallet', // unknown source — user reclassifies in Aset
+          balance: 0,
+          anchorAt: 0,
+          includeInRunway: GROUP_RUNWAY_DEFAULT.ewallet,
+          archived: false,
+        })
+      }
+    }
+  }
+  return newAccounts
+}
+
 interface CatalogStore {
   accounts: Account[]
   categories: Category[]
@@ -40,6 +70,10 @@ interface CatalogStore {
   // After an import: add any account/category names present in the imported
   // rows but missing from the catalog (never removes user entries).
   syncFromTransactions: (rows: RawTx[]) => void
+
+  // Full-state restore (from a Kanal backup file) — replaces both slices
+  // outright rather than merging, unlike syncFromTransactions.
+  restoreFromBackup: (accounts: Account[], categories: Category[]) => void
 
   resetCatalog: () => void
 }
@@ -108,27 +142,11 @@ export const useCatalogStore = create<CatalogStore>()(
 
       syncFromTransactions: (rows) =>
         set((s) => {
-          const haveAcc = new Set(s.accounts.map((a) => a.name))
-          const haveCat = new Set(s.categories.map((c) => c.name))
-          const now = Date.now()
+          const newAccounts = computeNewAccountsFromImport(s.accounts, rows)
 
-          const newAccounts: Account[] = []
+          const haveCat = new Set(s.categories.map((c) => c.name))
           const catTally = new Map<string, { keluar: number; masuk: number }>()
           for (const r of rows) {
-            for (const name of [r.account, r.toAccount]) {
-              if (name && !haveAcc.has(name)) {
-                haveAcc.add(name)
-                newAccounts.push({
-                  id: uid('acc'),
-                  name,
-                  group: 'ewallet', // unknown source — user reclassifies in Aset
-                  balance: 0,
-                  anchorAt: now,
-                  includeInRunway: GROUP_RUNWAY_DEFAULT.ewallet,
-                  archived: false,
-                })
-              }
-            }
             if (r.category && (r.type === 'keluar' || r.type === 'masuk')) {
               const t = catTally.get(r.category) ?? { keluar: 0, masuk: 0 }
               t[r.type] += 1
@@ -152,6 +170,8 @@ export const useCatalogStore = create<CatalogStore>()(
             categories: [...s.categories, ...newCategories],
           }
         }),
+
+      restoreFromBackup: (accounts, categories) => set({ accounts, categories }),
 
       resetCatalog: () =>
         set({ accounts: seedAccounts(), categories: seedCategories() }),
