@@ -1,21 +1,15 @@
 // Aliran view — mounts the canvas (or 2D Sankey fallback) + overlay UI (§9).
-// Canvas, MENAMPILKAN chip, icon cluster, scrubber, info panel. Reduced-motion
+// Canvas, MENAMPILKAN chip, 2D/3D toggle, scrubber, info panel. Reduced-motion
 // users land on the static 2D fallback automatically (§10 / a11y).
 
 import { useEffect } from 'react'
-import {
-  ArrowCounterClockwise,
-  ChartBar,
-  Question,
-  type Icon,
-} from '@phosphor-icons/react'
+import { ChartBar, type Icon } from '@phosphor-icons/react'
 import { AliranCanvas } from './AliranCanvas'
 import { SankeyFallback } from './SankeyFallback'
 import { AliranScrubber } from './AliranScrubber'
 import { AliranInfoPanel } from './AliranInfoPanel'
 import { useSceneStore } from './hooks/useSceneStore'
 import { useSceneData } from './hooks/useSceneData'
-import { useCameraDolly } from './hooks/useCameraDolly'
 import { usePlayback } from './hooks/usePlayback'
 import { useStatistikStore } from '../shared/store/useStatistikStore'
 
@@ -46,7 +40,6 @@ export function AliranView() {
   const use2DFallback = useSceneStore((s) => s.use2DFallback)
   const toggle2DFallback = useSceneStore((s) => s.toggle2DFallback)
   const set2DFallback = useSceneStore((s) => s.set2DFallback)
-  const requestReset = useCameraDolly((s) => s.requestReset)
   const { txCount } = useSceneData()
   const periodLabel = useStatistikStore((s) => s.period.label)
 
@@ -88,24 +81,14 @@ export function AliranView() {
         </div>
       </div>
 
-      {/* Icon cluster (§9) */}
+      {/* Icon cluster (§9) — only the 2D/3D toggle remains */}
       <div className="absolute right-3 top-12 flex flex-col gap-1.5">
-        {!use2DFallback && (
-          <IconButton
-            icon={ArrowCounterClockwise}
-            label="Atur ulang kamera"
-            onClick={requestReset}
-          />
-        )}
         <IconButton
           icon={ChartBar}
           label={use2DFallback ? 'Tampilan 3D' : 'Tampilan 2D'}
           onClick={toggle2DFallback}
           active={use2DFallback}
         />
-        {!use2DFallback && (
-          <IconButton icon={Question} label="Bantuan" onClick={() => {}} />
-        )}
       </div>
 
       {/* Scrubber (3D only) */}
