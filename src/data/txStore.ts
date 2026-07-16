@@ -24,7 +24,7 @@ const toTx = (r: RawTx): Transaction => ({
 })
 
 // Transaction → RawTx (Date → local ISO string, drop empty optionals) for Dexie.
-const toRaw = (t: Transaction): RawTx => {
+export const toRaw = (t: Transaction): RawTx => {
   const d = t.timestamp
   const pad = (n: number) => String(n).padStart(2, '0')
   const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
