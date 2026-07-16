@@ -1,6 +1,8 @@
-// Aset — grouped account view (Stage Final §4.2). Total-likuid hero, accounts
-// grouped by kind with subtotals, a sticky "+ Tambah akun", and the account
-// editor / archive sheets. Accounts are word-first rows (no monogram — that's
+// Aset — grouped account view (Stage Final §4.2) + category manager. Total-
+// likuid hero, accounts grouped by kind with subtotals, a sticky "+ Tambah
+// akun", and the account editor / archive sheets on the Akun segment; a
+// relocated category CRUD (moved from Runway's old Kelola sheet) on the
+// Kategori segment. Accounts are word-first rows (no monogram — that's
 // reserved for transactions). Renders in the phone frame on every breakpoint,
 // so this is the single-column form.
 
@@ -17,9 +19,12 @@ import { useLiveAccounts } from '../../data/useLiveAccounts'
 import { dots } from '../statistik/shared/format'
 import { AccountEditSheet, type EditTarget } from './AccountEditSheet'
 import { ArchiveSheet } from './ArchiveSheet'
+import { CategoryManager } from './CategoryManager'
 
 const LIQUID_GROUPS: AccountGroup[] = ['tunai', 'bank', 'ewallet', 'tabungan']
 const ASSET_GROUPS: AccountGroup[] = ['tunai', 'bank', 'ewallet', 'tabungan', 'kartu-prabayar']
+
+type Segment = 'akun' | 'kategori'
 
 // "Rp 157.000" / "−Rp 12.000" — balances can go negative once they track
 // transactions, so the sign is explicit.
@@ -28,6 +33,7 @@ const money = (n: number) => `${n < 0 ? '−' : ''}Rp ${dots(n)}`
 export function AsetTab() {
   // Balances shown here are live: anchor + transaction deltas.
   const accounts = useLiveAccounts()
+  const [segment, setSegment] = useState<Segment>('akun')
   const [target, setTarget] = useState<EditTarget | null>(null)
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [tip, setTip] = useState(false)
@@ -58,27 +64,29 @@ export function AsetTab() {
       {/* top bar */}
       <div className="relative flex items-center justify-between px-[22px] pb-1 pt-2">
         <span className="text-xl font-medium tracking-[-0.01em] text-kanal-fg">Aset</span>
-        <div className="flex gap-0.5">
-          <button
-            type="button"
-            onClick={() => {
-              setTip(true)
-              window.setTimeout(() => setTip(false), 2200)
-            }}
-            aria-label="Riwayat aset"
-            className="flex p-1.5 text-kanal-fg2 transition-transform active:scale-90"
-          >
-            <ChartLine size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setArchiveOpen(true)}
-            aria-label="Akun terarsip"
-            className="flex p-1.5 text-kanal-fg2 transition-transform active:scale-90"
-          >
-            <DotsThreeVertical size={20} weight="bold" />
-          </button>
-        </div>
+        {segment === 'akun' && (
+          <div className="flex gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                setTip(true)
+                window.setTimeout(() => setTip(false), 2200)
+              }}
+              aria-label="Riwayat aset"
+              className="flex p-1.5 text-kanal-fg2 transition-transform active:scale-90"
+            >
+              <ChartLine size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setArchiveOpen(true)}
+              aria-label="Akun terarsip"
+              className="flex p-1.5 text-kanal-fg2 transition-transform active:scale-90"
+            >
+              <DotsThreeVertical size={20} weight="bold" />
+            </button>
+          </div>
+        )}
         {tip && (
           <div
             role="status"
@@ -89,7 +97,28 @@ export function AsetTab() {
         )}
       </div>
 
-      {isEmpty ? (
+      {/* segment tabs */}
+      <div className="flex items-center gap-2 px-[22px] pb-2 pt-1">
+        {(['akun', 'kategori'] as const).map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setSegment(s)}
+            aria-pressed={segment === s}
+            className={`rounded-[8px] px-3 py-1.5 text-[13px] font-medium capitalize transition-colors ${
+              segment === s ? 'bg-kanal-surf2 text-kanal-fg' : 'text-kanal-fg3'
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {segment === 'kategori' ? (
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-[22px] pb-6 pt-1">
+          <CategoryManager />
+        </div>
+      ) : isEmpty ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-10">
           <p className="text-center text-[0.9375rem] text-kanal-fg2">Belum ada akun tercatat.</p>
           <button
