@@ -82,7 +82,7 @@ export function ImportPanel() {
         Pilih file .xlsx
         <input
           type="file"
-          accept=".xlsx,.xls,.csv"
+          accept=".xlsx,.xls"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0]
